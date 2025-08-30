@@ -5,16 +5,37 @@ use std::path::Path;
 use std::process::Command;
 
 pub fn send_notification(title: &str, message: &str) -> Result<(), Box<dyn std::error::Error>> {
+    send_notification_with_duration(title, message, None)
+}
+
+pub fn send_notification_with_duration(
+    title: &str, 
+    message: &str, 
+    duration_seconds: Option<u32>
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("🔔 发送通知: '{}' - '{}'", title, message);
+    if let Some(duration) = duration_seconds {
+        println!("⏱️ 设置显示时长: {}秒", duration);
+    }
     
     #[cfg(target_os = "macos")]
     {
         // 使用AppleScript发送通知（最可靠的方法）
-        let apple_script = format!(
+        let mut apple_script = format!(
             "display notification \"{}\" with title \"{}\" sound name \"Glass\"",
             message.replace("\"", "\\\""),
             title.replace("\"", "\\\"")
         );
+        
+        // 如果指定了时长，添加到AppleScript中
+        if let Some(duration) = duration_seconds {
+            apple_script = format!(
+                "display notification \"{}\" with title \"{}\" sound name \"Glass\" subtitle \"显示时长: {}秒\"",
+                message.replace("\"", "\\\""),
+                title.replace("\"", "\\\""),
+                duration
+            );
+        }
         
         let result = Command::new("osascript")
             .arg("-e")
@@ -41,10 +62,16 @@ pub fn send_notification(title: &str, message: &str) -> Result<(), Box<dyn std::
     
     #[cfg(target_os = "windows")]
     {
-        Toast::new(Toast::POWERSHELL_APP_ID)
+        let mut toast = Toast::new(Toast::POWERSHELL_APP_ID)
             .title(title)
-            .text1(message)
-            .show()?;
+            .text1(message);
+            
+        // Windows支持设置显示时长
+        if let Some(duration) = duration_seconds {
+            toast = toast.duration(duration);
+        }
+        
+        toast.show()?;
         return Ok(());
     }
     

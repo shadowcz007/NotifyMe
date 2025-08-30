@@ -5,6 +5,7 @@
 ## 功能特性
 
 - 🔔 **系统通知**: 发送跨平台系统通知
+- ⏱️ **通知时长**: 设置通知显示时长
 - 🔊 **通知声音**: 设置自定义通知声音
 - 🌐 **MCP 协议**: 支持 Model Context Protocol
 - 🖥️ **跨平台**: 支持 macOS 和 Windows
@@ -26,7 +27,24 @@
 }
 ```
 
-### 2. set_notification_sound
+### 2. send_notification_with_duration
+发送带时长的系统通知
+
+**参数:**
+- `title` (String): 通知标题
+- `message` (String): 通知消息内容
+- `duration_seconds` (Number, 可选): 显示时长（秒）
+
+**示例:**
+```json
+{
+  "title": "定时提醒",
+  "message": "这个通知会显示5秒",
+  "duration_seconds": 5
+}
+```
+
+### 3. set_notification_sound
 设置通知声音
 
 **参数:**
@@ -78,8 +96,9 @@ MCP_PORT=8080 cargo run
 ### 通过 MCP 客户端调用
 
 1. 连接到 MCP 服务器
-2. 调用 `send_notification` 工具发送通知
-3. 调用 `set_notification_sound` 工具设置声音
+2. 调用 `send_notification` 工具发送普通通知
+3. 调用 `send_notification_with_duration` 工具发送带时长的通知
+4. 调用 `set_notification_sound` 工具设置声音
 
 ### 工具调用示例
 
@@ -89,14 +108,27 @@ MCP_PORT=8080 cargo run
   "id": 1,
   "method": "tools/call",
   "params": {
-    "name": "send_notification",
+    "name": "send_notification_with_duration",
     "arguments": {
       "title": "任务完成",
-      "message": "您的任务已经完成！"
+      "message": "您的任务已经完成！",
+      "duration_seconds": 10
     }
   }
 }
 ```
+
+## 测试
+
+### 测试通知功能
+```bash
+cargo run --bin test_notification
+```
+
+这个测试程序会发送三种类型的通知：
+1. 普通通知
+2. 5秒时长的通知
+3. 2秒时长的通知
 
 ## 开发
 

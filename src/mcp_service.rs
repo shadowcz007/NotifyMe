@@ -1,5 +1,5 @@
 use crate::Config;
-use crate::notification::{send_notification, set_notification_sound};
+use crate::notification::{send_notification, set_notification_sound, send_notification_with_duration};
 use rmcp::{
     ErrorData as McpError, ServerHandler,
     handler::server::wrapper::Parameters,
@@ -16,6 +16,13 @@ use rmcp::transport::sse_server::{SseServer, SseServerConfig};
 pub struct SendNotificationArgs {
     pub title: String,
     pub message: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct SendNotificationWithDurationArgs {
+    pub title: String,
+    pub message: String,
+    pub duration_seconds: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -46,6 +53,14 @@ impl NotifyMeService {
         }
     }
 
+    #[tool(description = "发送带时长的系统通知 - 参数: title(标题), message(消息内容), duration_seconds(显示时长，可选)")]
+    async fn send_notification_with_duration(&self, Parameters(args): Parameters<SendNotificationWithDurationArgs>) -> Result<CallToolResult, McpError> {
+        match send_notification_with_duration(&args.title, &args.message, args.duration_seconds) {
+            Ok(_) => Ok(CallToolResult::success(vec![Content::text("带时长通知发送成功")])),
+            Err(e) => Ok(CallToolResult::success(vec![Content::text(format!("带时长通知发送失败: {}", e))])),
+        }
+    }
+
     #[tool(description = "设置通知声音 - 参数: sound_path(声音文件路径)")]
     async fn set_notification_sound(&self, Parameters(args): Parameters<SetNotificationSoundArgs>) -> Result<CallToolResult, McpError> {
         match set_notification_sound(&args.sound_path) {
@@ -65,7 +80,7 @@ impl ServerHandler for NotifyMeService {
                 name: "NotifyMe".to_string(),
                 version: env!("CARGO_PKG_VERSION").to_string(),
             },
-            instructions: Some("NotifyMe MCP 服务器: tools=send_notification, set_notification_sound".to_string()),
+            instructions: Some("NotifyMe MCP 服务器: tools=send_notification, send_notification_with_duration, set_notification_sound".to_string()),
         }
     }
 }
@@ -115,7 +130,7 @@ pub async fn run_mcp_server(config: Config) -> Result<(), Box<dyn Error + Send +
     let cancel_token = sse_server.with_service(move || NotifyMeService::new(cfg.clone()));
 
     println!("✅ MCP 服务器启动成功！ SSE: /sse, POST: /message");
-    println!("🔧 可用工具: send_notification, set_notification_sound");
+    println!("🔧 可用工具: send_notification, send_notification_with_duration, set_notification_sound");
     println!("🌐 CORS 已启用，支持跨域访问");
     println!("按 Ctrl+C 停止服务器...");
 
