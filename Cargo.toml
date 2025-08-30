@@ -13,9 +13,6 @@ tower-http = { version = "0.5", features = ["cors"] }
 rmcp = { version = "0.6.0", features = ["server", "transport-sse-server"] }
 rand = "0.8"
 schemars = "0.8"
-# For macOS notifications
-objc = "0.2"
-cocoa = "0.24"
 # For Windows notifications
 [target.'cfg(windows)'.dependencies]
 winrt-notification = "0.5"
